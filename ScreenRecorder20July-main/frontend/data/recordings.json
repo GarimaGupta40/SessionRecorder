@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_12-45-34.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_12-45-34.webm",
+    "recordedAt": "2026-07-15T07:15:34.130Z",
+    "duration": 12,
+    "status": "completed"
+  },
+  {
+    "id": 2,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_14-32-42.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_14-32-42.webm",
+    "recordedAt": "2026-07-15T09:02:42.392Z",
+    "duration": 10,
+    "status": "completed"
+  },
+  {
+    "id": 3,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_14-35-47.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_14-35-47.webm",
+    "recordedAt": "2026-07-15T09:05:47.098Z",
+    "duration": 9,
+    "status": "completed"
+  },
+  {
+    "id": 4,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_14-40-11.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_14-40-11.webm",
+    "recordedAt": "2026-07-15T09:10:11.339Z",
+    "duration": 5,
+    "status": "completed"
+  },
+  {
+    "id": 5,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_14-45-04.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_14-45-04.webm",
+    "recordedAt": "2026-07-15T09:15:04.600Z",
+    "duration": 23,
+    "status": "completed"
+  },
+  {
+    "id": 6,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_14-56-32.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_14-56-32.webm",
+    "recordedAt": "2026-07-15T09:26:32.052Z",
+    "duration": 10,
+    "status": "completed"
+  },
+  {
+    "id": 7,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_15-04-03.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_15-04-03.webm",
+    "recordedAt": "2026-07-15T09:34:03.355Z",
+    "duration": 11,
+    "status": "completed"
+  },
+  {
+    "id": 8,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-15_15-26-27.webm",
+    "filePath": "frontend/data/recordings/2026-07-15_15-26-27.webm",
+    "recordedAt": "2026-07-15T09:56:27.975Z",
+    "duration": 30,
+    "status": "completed"
+  },
+  {
+    "id": 9,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-16_12-08-34.webm",
+    "filePath": "frontend/data/recordings/2026-07-16_12-08-34.webm",
+    "recordedAt": "2026-07-16T06:38:34.841Z",
+    "duration": 204,
+    "status": "completed"
+  },
+  {
+    "id": 10,
+    "employeeId": "EMP001",
+    "employeeName": "Demo User",
+    "fileName": "2026-07-16_16-31-12.webm",
+    "filePath": "frontend/data/recordings/2026-07-16_16-31-12.webm",
+    "recordedAt": "2026-07-16T11:01:12.393Z",
+    "duration": 9,
+    "status": "completed"
+  }
+]
