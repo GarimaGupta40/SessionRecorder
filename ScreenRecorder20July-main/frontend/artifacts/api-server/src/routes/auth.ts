@@ -16,13 +16,36 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const { email, password } = parsed.data;
 
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.email, email))
-    .limit(1);
+  let user: any = null;
 
-  if (!user || user.passwordHash !== password) {
+  if (process.env.DATABASE_URL) {
+    try {
+      const [dbUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, email))
+        .limit(1);
+      if (dbUser && dbUser.passwordHash === password) {
+        user = dbUser;
+      }
+    } catch (err) {
+      console.error("[Auth] Database select error:", err);
+    }
+  } else {
+    // Development mode fallback when DATABASE_URL is not set
+    if ((email === "admin" || email === "admin@acmecorp.com" || email === "admin@monitorpro.io") && password === "admin123") {
+      user = {
+        id: 1,
+        name: "Admin User",
+        email: "admin@acmecorp.com",
+        role: "admin",
+        passwordHash: "admin123",
+        avatarUrl: null
+      };
+    }
+  }
+
+  if (!user) {
     await logAuditEvent({
       user: email,
       role: "Unknown",
@@ -35,11 +58,15 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  // Update lastSeenAt
-  await db
-    .update(usersTable)
-    .set({ lastSeenAt: new Date(), isOnline: true })
-    .where(eq(usersTable.id, user.id));
+  if (process.env.DATABASE_URL) {
+    try {
+      await db
+        .update(usersTable)
+        .set({ lastSeenAt: new Date(), isOnline: true })
+        .where(eq(usersTable.id, user.id));
+    } catch (err) {}
+  }
+
 
   const token = await signUserToken(user.id, user.email, user.role);
 
