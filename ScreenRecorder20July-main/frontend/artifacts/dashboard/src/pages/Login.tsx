@@ -27,13 +27,7 @@ export default function Login() {
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     try {
-      // Bypass the API since the local database isn't running
-      if (values.email === "admin" && values.password === "admin123") {
-        localStorage.setItem("token", "mock-token");
-        localStorage.setItem("user", JSON.stringify({ id: 1, email: "admin", name: "Admin User", role: "admin" }));
-        setLocation("/dashboard");
-        return;
-      }
+
       const response = await loginMutation.mutateAsync({ data: values });
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));

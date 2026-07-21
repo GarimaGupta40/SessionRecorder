@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { LoginBody } from "@workspace/api-zod";
 import { signUserToken } from "../lib/jwt.js";
+import { logAuditEvent } from "./audit-logs.js";
 
 const router: IRouter = Router();
 
@@ -22,6 +23,14 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .limit(1);
 
   if (!user || user.passwordHash !== password) {
+    await logAuditEvent({
+      user: email,
+      role: "Unknown",
+      module: "Authentication",
+      action: "Admin Login Failed",
+      status: "failed",
+      details: `Failed authentication attempt for ${email}`
+    });
     res.status(401).json({ error: "Invalid credentials" });
     return;
   }
@@ -33,6 +42,15 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .where(eq(usersTable.id, user.id));
 
   const token = await signUserToken(user.id, user.email, user.role);
+
+  await logAuditEvent({
+    user: `${user.name} (${user.email})`,
+    role: user.role,
+    module: "Authentication",
+    action: "Admin Login",
+    status: "success",
+    details: `User ${user.email} authenticated successfully as ${user.role}`
+  });
 
   res.json({
     token,
@@ -47,3 +65,4 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 });
 
 export default router;
+

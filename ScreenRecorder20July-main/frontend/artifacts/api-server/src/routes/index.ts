@@ -19,6 +19,8 @@ import sessionsRouter from "./sessions.js";
 import usersRouter from "./users.js";
 import devicesRouter from "./devices.js";
 import settingsRouter from "./settings.js";
+import auditLogsRouter from "./audit-logs.js";
+import dbConnectionsRouter from "./db-connections.js";
 
 const router: IRouter = Router();
 
@@ -41,5 +43,8 @@ router.use(sessionsRouter);
 router.use(usersRouter);
 router.use(devicesRouter);
 router.use(settingsRouter);
+router.use(auditLogsRouter);
+router.use(dbConnectionsRouter);
 
 export default router;
+

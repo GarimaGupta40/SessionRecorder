@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Search, 
   Calendar, 
@@ -19,8 +20,10 @@ import {
   Clock, 
   Shield, 
   ArrowUpRight,
-  Filter
+  Filter,
+  Loader2
 } from "lucide-react";
+
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -43,393 +46,14 @@ export interface AuditLog {
   userName: string;
   userEmail: string;
   userRole: "Admin" | "Manager" | "System" | "User";
-  module: "User Management" | "Recordings" | "Live Sessions" | "Rules & Policies" | "Storage" | "Authentication" | "System";
+  module: "Authentication" | "Users" | "Devices" | "Live Sessions" | "Recordings" | "Storage" | "Reports" | "Settings" | "User Management" | "Rules & Policies" | "System";
   action: string;
   details: string;
-  ipAddress: string;
+  deviceName: string;
   deviceBrowser: string;
   status: "success" | "warning" | "failed";
   metadata: Record<string, string>;
 }
-
-const DUMMY_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: "LOG-9821",
-    timestamp: "Jul 20, 2026 16:45:12",
-    isoDate: "2026-07-20T16:45:12Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "User Management",
-    action: "User Created",
-    details: "Created new employee account 'David Wallace' (david.w@acmecorp.com) with role Manager",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Target User ID": "USR-4091",
-      "Department": "Sales Engineering",
-      "Assigned Group": "Region North America",
-      "Session Token": "sess_89f2a491bc"
-    }
-  },
-  {
-    id: "LOG-9820",
-    timestamp: "Jul 20, 2026 16:30:04",
-    isoDate: "2026-07-20T16:30:04Z",
-    userName: "System Agent",
-    userEmail: "agent@monitorpro.internal",
-    userRole: "System",
-    module: "Storage",
-    action: "Storage Upload Completed",
-    details: "Uploaded session recording '2026-07-20_16-15-00.webm' (184.5 MB) to Supabase Cloud Storage",
-    ipAddress: "10.0.4.12",
-    deviceBrowser: "MonitorPro Agent 1.2.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Device Name": "DESKTOP-R90A7B",
-      "File Size": "184.5 MB",
-      "Upload Time": "4.2 seconds",
-      "Storage Bucket": "recordings"
-    }
-  },
-  {
-    id: "LOG-9819",
-    timestamp: "Jul 20, 2026 15:58:31",
-    isoDate: "2026-07-20T15:58:31Z",
-    userName: "Sarah Chen",
-    userEmail: "sarah.chen@acmecorp.com",
-    userRole: "Manager",
-    module: "Recordings",
-    action: "Recording Downloaded",
-    details: "Downloaded screen recording session #1042 for user 'Michael Scott'",
-    ipAddress: "192.168.1.142",
-    deviceBrowser: "Firefox 127.0 (macOS Sonoma)",
-    status: "success",
-    metadata: {
-      "Session ID": "1042",
-      "File Name": "2026-07-20_14-00-00.webm",
-      "Download Reason": "Routine compliance review"
-    }
-  },
-  {
-    id: "LOG-9818",
-    timestamp: "Jul 20, 2026 15:42:10",
-    isoDate: "2026-07-20T15:42:10Z",
-    userName: "System Agent",
-    userEmail: "agent@monitorpro.internal",
-    userRole: "System",
-    module: "Storage",
-    action: "Storage Upload Failed",
-    details: "Failed to upload video chunk due to network timeout (HTTP 504 Gateway Timeout)",
-    ipAddress: "10.0.4.18",
-    deviceBrowser: "MonitorPro Agent 1.2.0 (Linux x64)",
-    status: "failed",
-    metadata: {
-      "Error Code": "ETIMEDOUT",
-      "Retry Attempt": "3 of 3",
-      "Device Name": "DEV-SERVER-04",
-      "Destination": "s3.us-east-1.amazonaws.com"
-    }
-  },
-  {
-    id: "LOG-9817",
-    timestamp: "Jul 20, 2026 14:15:00",
-    isoDate: "2026-07-20T14:15:00Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "Rules & Policies",
-    action: "Productivity Rule Updated",
-    details: "Modified idle timeout policy threshold from 10 minutes to 5 minutes",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Policy Name": "Default Workstation Idle Timeout",
-      "Old Value": "600s",
-      "New Value": "300s",
-      "Scope": "All Active Devices"
-    }
-  },
-  {
-    id: "LOG-9816",
-    timestamp: "Jul 20, 2026 13:50:22",
-    isoDate: "2026-07-20T13:50:22Z",
-    userName: "Sarah Chen",
-    userEmail: "sarah.chen@acmecorp.com",
-    userRole: "Manager",
-    module: "Live Sessions",
-    action: "Live Session Viewed",
-    details: "Initiated live stream monitoring on device 'DESKTOP-SALES-02' (User: Dwight Schrute)",
-    ipAddress: "192.168.1.142",
-    deviceBrowser: "Firefox 127.0 (macOS Sonoma)",
-    status: "success",
-    metadata: {
-      "Stream ID": "stream_908412",
-      "Device ID": "DEV-002",
-      "FPS": "30",
-      "Resolution": "1080p"
-    }
-  },
-  {
-    id: "LOG-9815",
-    timestamp: "Jul 20, 2026 12:10:44",
-    isoDate: "2026-07-20T12:10:44Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "User Management",
-    action: "User Deleted",
-    details: "Permanently deleted user account 'Ryan Howard' (temp.user@acmecorp.com) and associated metadata",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "warning",
-    metadata: {
-      "Deleted User ID": "USR-1092",
-      "Recordings Retained": "Yes (30-day archival policy)",
-      "Approved By": "Admin User"
-    }
-  },
-  {
-    id: "LOG-9814",
-    timestamp: "Jul 20, 2026 11:32:05",
-    isoDate: "2026-07-20T11:32:05Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "Recordings",
-    action: "Recording Deleted",
-    details: "Manually purged expired recording file #891 (Storage cleanup policy)",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "warning",
-    metadata: {
-      "Recording ID": "891",
-      "Age": "94 days",
-      "Freed Space": "412.8 MB"
-    }
-  },
-  {
-    id: "LOG-9813",
-    timestamp: "Jul 20, 2026 09:15:00",
-    isoDate: "2026-07-20T09:15:00Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "Authentication",
-    action: "Admin Login",
-    details: "Successful admin authentication via session token",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Auth Method": "Bearer JWT Token",
-      "MFA Verified": "True",
-      "Session ID": "sess_8910ac"
-    }
-  },
-  {
-    id: "LOG-9812",
-    timestamp: "Jul 19, 2026 23:45:10",
-    isoDate: "2026-07-19T23:45:10Z",
-    userName: "Unknown User",
-    userEmail: "intruder@external-ip.net",
-    userRole: "User",
-    module: "Authentication",
-    action: "Admin Login Failed",
-    details: "Failed authentication attempt on endpoint /api/auth/login due to invalid credentials",
-    ipAddress: "185.220.101.5",
-    deviceBrowser: "Python-urllib/3.11",
-    status: "failed",
-    metadata: {
-      "Attempted Username": "administrator",
-      "Failure Reason": "Invalid Password",
-      "Geo Location": "Frankfurt, Germany",
-      "Blocked By Rate Limiter": "False"
-    }
-  },
-  {
-    id: "LOG-9811",
-    timestamp: "Jul 19, 2026 18:20:14",
-    isoDate: "2026-07-19T18:20:14Z",
-    userName: "Sarah Chen",
-    userEmail: "sarah.chen@acmecorp.com",
-    userRole: "Manager",
-    module: "Authentication",
-    action: "Admin Logout",
-    details: "Manager user gracefully logged out of portal",
-    ipAddress: "192.168.1.142",
-    deviceBrowser: "Firefox 127.0 (macOS Sonoma)",
-    status: "success",
-    metadata: {
-      "Session Duration": "4 hours 15 minutes",
-      "Logout Type": "Explicit User Action"
-    }
-  },
-  {
-    id: "LOG-9810",
-    timestamp: "Jul 19, 2026 15:10:00",
-    isoDate: "2026-07-19T15:10:00Z",
-    userName: "System Agent",
-    userEmail: "agent@monitorpro.internal",
-    userRole: "System",
-    module: "System",
-    action: "Database Backup Completed",
-    details: "Automated daily snapshot database backup generated successfully (Size: 842.1 MB)",
-    ipAddress: "127.0.0.1",
-    deviceBrowser: "Internal Cron Job",
-    status: "success",
-    metadata: {
-      "Backup File": "db_backup_2026-07-19.pgdump",
-      "Checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    }
-  },
-  {
-    id: "LOG-9809",
-    timestamp: "Jul 19, 2026 11:05:32",
-    isoDate: "2026-07-19T11:05:32Z",
-    userName: "Jim Halpert",
-    userEmail: "jim.halpert@acmecorp.com",
-    userRole: "User",
-    module: "Live Sessions",
-    action: "Live Session Viewed",
-    details: "Accessed live monitoring tab for workspace 'Sales Team Alpha'",
-    ipAddress: "192.168.1.118",
-    deviceBrowser: "Safari 17.4 (macOS Sonoma)",
-    status: "success",
-    metadata: {
-      "View Mode": "Grid View",
-      "Devices Monitored": "4"
-    }
-  },
-  {
-    id: "LOG-9808",
-    timestamp: "Jul 18, 2026 16:40:19",
-    isoDate: "2026-07-18T16:40:19Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "User Management",
-    action: "User Created",
-    details: "Created new employee account 'Pam Beesly' (pam.b@acmecorp.com) with role User",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Target User ID": "USR-4090",
-      "Department": "Design & Marketing"
-    }
-  },
-  {
-    id: "LOG-9807",
-    timestamp: "Jul 18, 2026 14:00:55",
-    isoDate: "2026-07-18T14:00:55Z",
-    userName: "System Agent",
-    userEmail: "agent@monitorpro.internal",
-    userRole: "System",
-    module: "Storage",
-    action: "Storage Upload Completed",
-    details: "Uploaded session recording '2026-07-18_13-00-00.webm' (210.4 MB) to cloud storage",
-    ipAddress: "10.0.4.15",
-    deviceBrowser: "MonitorPro Agent 1.2.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Device Name": "DESKTOP-FIN-01",
-      "File Size": "210.4 MB"
-    }
-  },
-  {
-    id: "LOG-9806",
-    timestamp: "Jul 17, 2026 17:30:00",
-    isoDate: "2026-07-17T17:30:00Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "Rules & Policies",
-    action: "Productivity Rule Updated",
-    details: "Added new category filter for website tracking: 'Social Media & Games'",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Edge 125.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Category ID": "CAT-09",
-      "Filter Type": "Non-productive"
-    }
-  },
-  {
-    id: "LOG-9805",
-    timestamp: "Jul 17, 2026 10:12:40",
-    isoDate: "2026-07-17T10:12:40Z",
-    userName: "Sarah Chen",
-    userEmail: "sarah.chen@acmecorp.com",
-    userRole: "Manager",
-    module: "Recordings",
-    action: "Recording Downloaded",
-    details: "Exported session video audit log #904 for customer support review",
-    ipAddress: "192.168.1.142",
-    deviceBrowser: "Firefox 127.0 (macOS Sonoma)",
-    status: "success",
-    metadata: {
-      "Recording ID": "904",
-      "Size": "142.1 MB"
-    }
-  },
-  {
-    id: "LOG-9804",
-    timestamp: "Jul 16, 2026 19:05:11",
-    isoDate: "2026-07-16T19:05:11Z",
-    userName: "System Agent",
-    userEmail: "agent@monitorpro.internal",
-    userRole: "System",
-    module: "Storage",
-    action: "Storage Upload Failed",
-    details: "Storage quota exceeded error while attempting chunk upload (403 Storage Full)",
-    ipAddress: "10.0.4.99",
-    deviceBrowser: "MonitorPro Agent 1.2.0 (Windows 10)",
-    status: "failed",
-    metadata: {
-      "Quota": "500 GB",
-      "Current Storage": "499.8 GB"
-    }
-  },
-  {
-    id: "LOG-9803",
-    timestamp: "Jul 16, 2026 12:45:00",
-    isoDate: "2026-07-16T12:45:00Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "Authentication",
-    action: "Admin Login",
-    details: "Admin User logged into dashboard from new IP address",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "MFA": "Passed",
-      "Location": "Scranton, PA"
-    }
-  },
-  {
-    id: "LOG-9802",
-    timestamp: "Jul 15, 2026 14:10:00",
-    isoDate: "2026-07-15T14:10:00Z",
-    userName: "Admin User",
-    userEmail: "admin@acmecorp.com",
-    userRole: "Admin",
-    module: "User Management",
-    action: "User Created",
-    details: "Created new employee account 'Angela Martin' (angela.m@acmecorp.com) with role User",
-    ipAddress: "192.168.1.105",
-    deviceBrowser: "Chrome 126.0 (Windows 11)",
-    status: "success",
-    metadata: {
-      "Target User ID": "USR-4089",
-      "Department": "Accounting"
-    }
-  }
-];
 
 type SortField = "timestamp" | "userName" | "module" | "action" | "status";
 type SortDir = "asc" | "desc";
@@ -454,17 +78,57 @@ export default function AuditLogs() {
 
   const limit = 10;
 
+  // React Query fetch from backend REST API
+  const { data: apiData, isLoading } = useQuery({
+    queryKey: ["audit-logs", page, limit, search, moduleFilter, actionFilter, statusFilter, dateRange],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        search,
+        module: moduleFilter,
+        action: actionFilter,
+        status: statusFilter,
+        dateRange,
+      });
+      const res = await fetch(`/api/audit-logs?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch audit logs");
+      return res.json();
+    }
+  });
+
+  const logsSource: AuditLog[] = useMemo(() => {
+    if (!apiData?.logs || !Array.isArray(apiData.logs)) return [];
+    return apiData.logs.map((item: any) => ({
+
+      id: item.logId || `LOG-${item.id}`,
+      timestamp: item.timestamp ? new Date(item.timestamp).toLocaleString("en-US", { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "Jul 21, 2026 09:00:00",
+      isoDate: item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString(),
+      userName: item.user ? item.user.split("(")[0].trim() : "Admin User",
+      userEmail: item.user && item.user.includes("(") ? item.user.split("(")[1].replace(")", "").trim() : "admin@monitorpro.io",
+      userRole: item.role === "Administrator" ? "Admin" : item.role || "Admin",
+      module: item.module || "Settings",
+      action: item.action || "System Action",
+      details: item.details || "",
+      deviceName: item.deviceName || "DELL-LATITUDE-5440",
+      deviceBrowser: "Chrome 126.0 (Windows 11)",
+      status: item.status || "success",
+      metadata: item.metadata || { "Target Module": item.module, "Action Status": item.status || "success" }
+    }));
+  }, [apiData]);
+
   // Filter logs based on search & filters
   const filteredLogs = useMemo(() => {
-    return DUMMY_AUDIT_LOGS.filter((log) => {
+    return logsSource.filter((log) => {
+
       // Search
       if (search.trim()) {
         const query = search.toLowerCase();
         const matchesId = log.id.toLowerCase().includes(query);
         const matchesUser = log.userName.toLowerCase().includes(query) || log.userEmail.toLowerCase().includes(query);
         const matchesDetails = log.details.toLowerCase().includes(query);
-        const matchesIp = log.ipAddress.toLowerCase().includes(query);
-        if (!matchesId && !matchesUser && !matchesDetails && !matchesIp) {
+        const matchesDevice = log.deviceName.toLowerCase().includes(query);
+        if (!matchesId && !matchesUser && !matchesDetails && !matchesDevice) {
           return false;
         }
       }
@@ -472,9 +136,9 @@ export default function AuditLogs() {
       // Date Range Filter
       if (dateRange !== "all") {
         const logDate = new Date(log.isoDate);
-        const now = new Date("2026-07-20T23:59:59Z");
+        const now = new Date("2026-07-21T23:59:59Z");
         if (dateRange === "today") {
-          const todayStr = "2026-07-20";
+          const todayStr = "2026-07-21";
           if (!log.isoDate.startsWith(todayStr)) return false;
         } else if (dateRange === "7days") {
           const diffDays = (now.getTime() - logDate.getTime()) / (1000 * 3600 * 24);
@@ -540,14 +204,23 @@ export default function AuditLogs() {
     return sortedLogs.slice(start, start + limit);
   }, [sortedLogs, page, limit]);
 
-  // Summary counts calculated from all DUMMY_AUDIT_LOGS
+  // Summary counts calculated from live API response
   const summary = useMemo(() => {
-    const totalLogs = DUMMY_AUDIT_LOGS.length;
-    const adminActions = DUMMY_AUDIT_LOGS.filter(l => l.userRole === "Admin").length;
-    const systemEvents = DUMMY_AUDIT_LOGS.filter(l => l.userRole === "System").length;
-    const failedActions = DUMMY_AUDIT_LOGS.filter(l => l.status === "failed").length;
+    if (apiData?.summary) {
+      return {
+        totalLogs: apiData.summary.totalLogs ?? 0,
+        adminActions: apiData.summary.adminActions ?? 0,
+        systemEvents: apiData.summary.systemEvents ?? 0,
+        failedActions: apiData.summary.failedAttempts ?? 0,
+      };
+    }
+    const totalLogs = logsSource.length;
+    const adminActions = logsSource.filter(l => l.userRole === "Admin" || l.userRole === "System").length;
+    const systemEvents = logsSource.filter(l => l.userRole === "System").length;
+    const failedActions = logsSource.filter(l => l.status === "failed").length;
     return { totalLogs, adminActions, systemEvents, failedActions };
-  }, []);
+  }, [apiData, logsSource]);
+
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -672,7 +345,7 @@ export default function AuditLogs() {
             <div className="relative flex-1 min-w-[240px] max-w-md">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Search by log ID, user, IP, or details..."
+                placeholder="Search by log ID, user, device name, or details..."
                 className="pl-9 h-10 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500 rounded-lg text-sm"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -702,13 +375,14 @@ export default function AuditLogs() {
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200">
                 <SelectItem value="all">All Modules</SelectItem>
-                <SelectItem value="User Management">User Management</SelectItem>
-                <SelectItem value="Recordings">Recordings</SelectItem>
-                <SelectItem value="Live Sessions">Live Sessions</SelectItem>
-                <SelectItem value="Rules & Policies">Rules & Policies</SelectItem>
-                <SelectItem value="Storage">Storage</SelectItem>
                 <SelectItem value="Authentication">Authentication</SelectItem>
-                <SelectItem value="System">System</SelectItem>
+                <SelectItem value="Users">Users</SelectItem>
+                <SelectItem value="Devices">Devices</SelectItem>
+                <SelectItem value="Live Sessions">Live Sessions</SelectItem>
+                <SelectItem value="Recordings">Recordings</SelectItem>
+                <SelectItem value="Storage">Storage</SelectItem>
+                <SelectItem value="Reports">Reports</SelectItem>
+                <SelectItem value="Settings">Settings</SelectItem>
               </SelectContent>
             </Select>
 
@@ -719,16 +393,28 @@ export default function AuditLogs() {
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-200">
                 <SelectItem value="all">All Actions</SelectItem>
-                <SelectItem value="User Created">User Created</SelectItem>
-                <SelectItem value="User Deleted">User Deleted</SelectItem>
-                <SelectItem value="Recording Downloaded">Recording Downloaded</SelectItem>
-                <SelectItem value="Recording Deleted">Recording Deleted</SelectItem>
-                <SelectItem value="Live Session Viewed">Live Session Viewed</SelectItem>
-                <SelectItem value="Productivity Rule Updated">Productivity Rule Updated</SelectItem>
-                <SelectItem value="Storage Upload Completed">Storage Upload Completed</SelectItem>
-                <SelectItem value="Storage Upload Failed">Storage Upload Failed</SelectItem>
                 <SelectItem value="Admin Login">Admin Login</SelectItem>
                 <SelectItem value="Admin Logout">Admin Logout</SelectItem>
+                <SelectItem value="User Created">User Created</SelectItem>
+                <SelectItem value="User Updated">User Updated</SelectItem>
+                <SelectItem value="User Disabled">User Disabled</SelectItem>
+                <SelectItem value="Agent Installed">Agent Installed</SelectItem>
+                <SelectItem value="Live Session Started">Live Session Started</SelectItem>
+                <SelectItem value="Live Session Ended">Live Session Ended</SelectItem>
+                <SelectItem value="Recording Started">Recording Started</SelectItem>
+                <SelectItem value="Recording Downloaded">Recording Downloaded</SelectItem>
+                <SelectItem value="Recording Deleted">Recording Deleted</SelectItem>
+                <SelectItem value="Upload Started">Upload Started</SelectItem>
+                <SelectItem value="Upload Completed">Upload Completed</SelectItem>
+                <SelectItem value="Upload Failed">Upload Failed</SelectItem>
+                <SelectItem value="Report Exported">Report Exported</SelectItem>
+                <SelectItem value="Recording Quality Updated">Recording Quality Updated</SelectItem>
+                <SelectItem value="Data Retention Updated">Data Retention Updated</SelectItem>
+                <SelectItem value="Audio Recording Enabled">Audio Recording Enabled</SelectItem>
+                <SelectItem value="Audio Recording Disabled">Audio Recording Disabled</SelectItem>
+                <SelectItem value="Stealth Mode Enabled">Stealth Mode Enabled</SelectItem>
+                <SelectItem value="Stealth Mode Disabled">Stealth Mode Disabled</SelectItem>
+                <SelectItem value="Purge All Recordings">Purge All Recordings</SelectItem>
               </SelectContent>
             </Select>
 
@@ -800,7 +486,7 @@ export default function AuditLogs() {
                   Details
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-slate-500 py-3.5">
-                  IP Address
+                  Device Name
                 </TableHead>
                 <TableHead
                   className="text-xs font-semibold text-slate-500 py-3.5 cursor-pointer select-none group"
@@ -816,13 +502,27 @@ export default function AuditLogs() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentLogs.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-48 text-center text-slate-500 text-sm">
-                    No audit logs match your search and filter criteria.
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+                      <span className="font-semibold text-slate-700">Loading audit records from PostgreSQL database...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : currentLogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-48 text-center text-slate-500 text-sm">
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <ClipboardList className="w-8 h-8 text-slate-300 mb-1" />
+                      <span className="font-semibold text-slate-700">No audit logs found</span>
+                      <span className="text-xs text-slate-400">No event records found in PostgreSQL database matching your filter criteria.</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
+
                 currentLogs.map((log) => (
                   <TableRow
                     key={log.id}
@@ -879,9 +579,9 @@ export default function AuditLogs() {
                       </p>
                     </TableCell>
 
-                    {/* IP Address */}
-                    <TableCell className="whitespace-nowrap text-xs font-mono text-slate-500">
-                      {log.ipAddress}
+                    {/* Device Name */}
+                    <TableCell className="whitespace-nowrap text-xs font-medium text-slate-700">
+                      {log.deviceName}
                     </TableCell>
 
                     {/* Status */}
@@ -1056,10 +756,10 @@ export default function AuditLogs() {
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg">
                       <span className="text-slate-500 font-medium flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-slate-400" /> IP Address
+                        <Laptop className="w-4 h-4 text-slate-400" /> Device Name
                       </span>
-                      <span className="font-mono font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
-                        {selectedLog.ipAddress}
+                      <span className="font-mono font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                        {selectedLog.deviceName}
                       </span>
                     </div>
 

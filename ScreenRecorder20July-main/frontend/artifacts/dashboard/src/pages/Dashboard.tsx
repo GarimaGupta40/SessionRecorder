@@ -14,8 +14,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-// Mock data for mini charts
-const sparklineData = Array.from({ length: 20 }, (_, i) => ({ value: Math.random() * 10 + 5 }));
+
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return '0 Bytes';
@@ -51,7 +50,8 @@ export default function Dashboard() {
   }
 
   const sessions = sessionsRes?.data || [];
-  
+  const sparklineData = activityData?.map((item: any) => ({ value: item.activeSessions })) || [];
+
   // Transform storage data for Donut Chart
   const pieColors = ["#4F46E5", "#A855F7", "#F59E0B", "#10B981"];
   const pieData = storageData?.map((item: any) => ({
